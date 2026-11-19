@@ -1,4 +1,4 @@
-/* Registro de Artículos · beta 0.2
+/* Registro de Artículos · beta 0.3
    Los campos vienen de columnas.js; este archivo no necesita cambios para agregar/quitar columnas.
 
    Datos (todo en el teléfono, IndexedDB):
@@ -13,6 +13,7 @@
   const COL_SCAN = (COLS.find(c => c.escanear) || COLS[0]).clave;
   const COL_FOTO = (COLS.find(c => c.tipo === "foto") || {}).clave;
   const COLS_DATO = COLS.filter(c => c.tipo !== "foto");
+  const COLS_POS = COLS.filter(c => c.exportar !== false);   // las que van al Excel del punto de venta
   const TIENE_CODIGO = COLS.some(c => c.clave === "codigo");
   const $ = s => document.querySelector(s);
 
@@ -254,10 +255,14 @@
     if (blob) {
       fotoUrl = URL.createObjectURL(blob);
       prev.outerHTML = `<img id="foto-prev" src="${fotoUrl}" alt="Foto del producto">`;
+      $("#foto-prev").onclick = () => verFoto(fotoUrl);
     } else prev.outerHTML = `<div class="ph" id="foto-prev">📷</div>`;
     $("#foto-tomar").textContent = blob ? "Cambiar foto" : "Tomar foto";
     $("#foto-quitar").classList.toggle("hidden", !blob);
   }
+
+  function verFoto(url) { const v = $("#visor"); v.querySelector("img").src = url; v.classList.remove("hidden"); }
+  $("#visor").onclick = () => $("#visor").classList.add("hidden");
 
   function validar(datos) {
     const errores = {};
@@ -321,21 +326,39 @@
   // ---------- lista ----------
   const cPrecio = COLS.find(c => c.tipo === "precio");
   let thumbs = [];
+  const cCosto = COLS.find(c => c.clave === "costo");
+  const cTienda = COLS.find(c => c.clave === "tienda");
+  const llaveBusq = s => norm(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const coincide = (it, palabras) => {
+    const texto = llaveBusq(COLS_DATO.map(c => it[c.clave]).join(" "));
+    return palabras.every(p => texto.includes(p));
+  };
+  function filaHTML(it, enCatalogo) {
+    const meta = [it.codigo, it[COL_SCAN], it.categoria].map(norm).filter(Boolean).join(" · ");
+    const pers = [cCosto && it[cCosto.clave] ? "Costo " + fmtPrecio(it[cCosto.clave]) : "", cTienda ? norm(it[cTienda.clave]) : ""].filter(Boolean).join(" · ");
+    const tag = enCatalogo ? "" : it._cat ? '<span class="tag act">Actualiza</span>' : '<span class="tag nuevo">Nuevo</span>';
+    return `<div class="item${it.activo === "No" ? " inactive" : ""}" ${enCatalogo ? `data-cat="${esc(catKey(it))}"` : `data-id="${it._id}"`}>
+      ${COL_FOTO ? `<img class="thumb" data-foto="${!enCatalogo && fotosIds.has(it._id) ? it._id : ""}" alt="">` : ""}
+      <div class="info"><div class="name">${esc(it.nombre) || "(sin nombre)"}${tag}</div>
+      <div class="meta">${esc(meta) || "&nbsp;"}</div>${pers ? `<div class="meta2">${esc(pers)}</div>` : ""}</div>
+      <div class="price">${cPrecio ? fmtPrecio(it[cPrecio.clave]) : ""}</div></div>`;
+  }
   async function pintarLista() {
     thumbs.forEach(u => URL.revokeObjectURL(u)); thumbs = [];
-    const q = norm($("#buscar").value).toLowerCase();
-    const vis = q ? items.filter(it => COLS_DATO.some(c => norm(it[c.clave]).toLowerCase().includes(q))) : items;
+    const palabras = llaveBusq($("#buscar").value).split(/\s+/).filter(Boolean);
+    const mios = palabras.length ? items.filter(it => coincide(it, palabras)) : items;
+    // del catálogo: solo al buscar, y sin repetir los que ya registraste aquí
+    const yaMios = new Set(items.map(it => it._cat).filter(Boolean));
+    const delCat = palabras.length ? catalogo.filter(c => !yaMios.has(catKey(c)) && coincide(c, palabras)).slice(0, 50) : [];
     const cont = $("#lista");
-    if (!vis.length) { cont.innerHTML = `<div class="empty">${items.length ? "Sin resultados" : "Aún no hay artículos. Escanea el primero."}</div>`; return; }
-    cont.innerHTML = vis.slice(0, 300).map(it => {
-      const meta = [it.codigo, it[COL_SCAN], it.categoria].map(norm).filter(Boolean).join(" · ");
-      const tag = it._cat ? '<span class="tag act">Actualiza</span>' : '<span class="tag nuevo">Nuevo</span>';
-      return `<div class="item${it.activo === "No" ? " inactive" : ""}" data-id="${it._id}">
-        ${COL_FOTO ? `<img class="thumb" data-foto="${fotosIds.has(it._id) ? it._id : ""}" alt="">` : ""}
-        <div class="info"><div class="name">${esc(it.nombre) || "(sin nombre)"}${tag}</div><div class="meta">${esc(meta) || "&nbsp;"}</div></div>
-        <div class="price">${cPrecio ? fmtPrecio(it[cPrecio.clave]) : ""}</div></div>`;
-    }).join("") + (vis.length > 300 ? `<div class="empty">Mostrando 300 de ${vis.length}. Usa el buscador.</div>` : "");
-    cont.querySelectorAll(".item").forEach(el => el.onclick = () => abrirForm({ item: items.find(x => x._id === el.dataset.id) }));
+    let html = "";
+    if (mios.length) html += `<div class="sec">Mis artículos (${mios.length})</div>` + mios.slice(0, 300).map(it => filaHTML(it, false)).join("") +
+      (mios.length > 300 ? `<div class="empty">Mostrando 300 de ${mios.length}. Escribe más para filtrar.</div>` : "");
+    if (delCat.length) html += `<div class="sec">En tu punto de venta</div>` + delCat.map(c => filaHTML(c, true)).join("");
+    if (!html) html = `<div class="empty">${palabras.length ? "Sin resultados" : "Aún no hay artículos. Escanea el primero o busca en tu catálogo."}</div>`;
+    cont.innerHTML = html;
+    cont.querySelectorAll(".item[data-id]").forEach(el => el.onclick = () => abrirForm({ item: items.find(x => x._id === el.dataset.id) }));
+    cont.querySelectorAll(".item[data-cat]").forEach(el => el.onclick = () => abrirForm({ cat: catalogo.find(c => catKey(c) === el.dataset.cat) }));
     for (const img of cont.querySelectorAll("img[data-foto]")) {
       if (!img.dataset.foto) continue;
       const b = await fotoGet(img.dataset.foto).catch(() => null);
@@ -347,11 +370,11 @@
   // ---------- exportar ----------
   async function pintarExportar() {
     $("#hoja-nombre").textContent = HOJA;
-    $("#exp-columnas").textContent = "Columnas: " + COLS.map(c => c.titulo).join(", ");
+    $("#exp-columnas").textContent = "Columnas: " + COLS_POS.map(c => c.titulo).join(", ") +
+      (COLS_POS.length < COLS.length ? ". No incluye tus datos personales (" + COLS.filter(c => c.exportar === false).map(c => c.titulo).join(", ") + ")." : "");
     const n = items.length;
     $("#btn-exportar").disabled = !n;
     $("#btn-exportar").textContent = n ? `Descargar Excel (${n})` : "No hay artículos";
-    $("#btn-zip").classList.toggle("hidden", !COL_FOTO);
     $("#btn-zip").disabled = !n;
     const u = await kvGet("ultima").catch(() => null);
     $("#exp-ultima").textContent = u ? "Última exportación: " + fecha(u) : "";
@@ -361,7 +384,7 @@
     $("#btn-cat-borrar").classList.toggle("hidden", !catInfo);
     $("#btn-importar").textContent = catInfo ? "Reemplazar catálogo…" : "Cargar catálogo…";
   }
-  function crearLibro() {
+  function crearLibro(COLS) {
     const ws = {};
     COLS.forEach((c, i) => { ws[XLSX.utils.encode_cell({ r: 0, c: i })] = { t: "s", v: c.titulo }; });
     const filas = items.slice().reverse(); // más antiguos primero
@@ -393,23 +416,42 @@
   }
   $("#btn-exportar").onclick = async () => {
     const nombre = `${HOJA}_${sello()}.xlsx`;
-    XLSX.writeFile(crearLibro(), nombre);
+    XLSX.writeFile(crearLibro(COLS_POS), nombre);
     marcarExport(nombre);
   };
   $("#btn-zip").onclick = async () => {
     const btn = $("#btn-zip"); btn.disabled = true; const txt = btn.textContent; btn.textContent = "Preparando…";
     try {
       const s = sello(), zip = new JSZip();
-      zip.file(`${HOJA}_${s}.xlsx`, XLSX.write(crearLibro(), { bookType: "xlsx", type: "array" }));
+      zip.file("articulos.xlsx", XLSX.write(crearLibro(COLS), { bookType: "xlsx", type: "array" }));
+      zip.file("articulos.json", JSON.stringify({ version: 1, items, catInfo }, null, 1));
       const carpeta = zip.folder("fotos");
       for (const it of items) if (fotosIds.has(it._id)) {
         const b = await fotoGet(it._id); if (b) carpeta.file(nombreFoto(it), b);
       }
-      const nombre = `${HOJA}_${s}.zip`;
+      const nombre = `Respaldo_articulos_${s}.zip`;
       descargar(await zip.generateAsync({ type: "blob" }), nombre);
-      marcarExport(nombre);
-    } catch (e) { aviso("No se pudo crear el ZIP"); }
+      aviso("Respaldo listo: " + nombre);
+    } catch (e) { aviso("No se pudo crear el respaldo"); }
     btn.textContent = txt; btn.disabled = false;
+  };
+  $("#btn-restaurar").onclick = () => $("#archivo-resp").click();
+  $("#archivo-resp").onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    try {
+      const zip = await JSZip.loadAsync(f);
+      const j = zip.file("articulos.json"); if (!j) { aviso("Ese ZIP no es un respaldo de esta app"); return; }
+      const datos = JSON.parse(await j.async("string"));
+      if (!Array.isArray(datos.items)) throw new Error("respaldo");
+      if (!confirm(`¿Reemplazar los ${items.length} artículos de este teléfono por los ${datos.items.length} del respaldo?`)) return;
+      await fotosClear(); fotosIds.clear();
+      for (const it of datos.items) {
+        const fz = zip.file("fotos/" + nombreFoto(it));
+        if (fz) { await fotoSet(it._id, new Blob([await fz.async("arraybuffer")], { type: "image/jpeg" })); fotosIds.add(it._id); }
+      }
+      items = datos.items; await guardarItems(); pintarExportar();
+      aviso(`Respaldo restaurado: ${items.length} artículos`);
+    } catch (err) { aviso("No se pudo leer el respaldo"); }
   };
 
   // ---------- importar catálogo del punto de venta ----------

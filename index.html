@@ -82,7 +82,11 @@ p{margin:6px 0}
 .foto-box img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
 .foto-box .ph{width:96px;height:96px;border-radius:10px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:28px}
 .foto-box .btns{display:flex;flex-direction:column;gap:6px;flex:1}
-.thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:0 0 auto;background:var(--soft)}
+.item .meta2{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sec{font-size:13px;font-weight:700;color:var(--muted);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.03em}
+#visor{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px}
+#visor img{max-width:100%;max-height:100%;border-radius:8px}
+.thumb{width:56px;height:56px;border-radius:8px;object-fit:cover;flex:0 0 auto;background:var(--soft)}
 .tag{font-size:11px;padding:1px 6px;border-radius:99px;margin-left:6px;vertical-align:middle;font-weight:600}
 .tag.nuevo{background:var(--soft);color:var(--pri)}
 .tag.act{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
@@ -131,7 +135,7 @@ p{margin:6px 0}
 
   <!-- LISTA -->
   <section id="v-lista" class="hidden">
-    <input class="search" id="buscar" type="search" placeholder="Buscar por nombre, código o barras">
+    <input class="search" id="buscar" type="search" placeholder="Buscar por nombre, código, barras o tienda">
     <div class="card" id="lista"></div>
   </section>
 
@@ -142,9 +146,14 @@ p{margin:6px 0}
       <p>Descarga los artículos que registraste o actualizaste, en la hoja <b id="hoja-nombre"></b> con las columnas de tu plantilla.</p>
       <p class="small" id="exp-columnas"></p>
       <button class="pri big" id="btn-exportar" style="margin-top:8px">Descargar Excel</button>
-      <button class="big" id="btn-zip" style="margin-top:8px">Descargar Excel + fotos (ZIP)</button>
-      <p class="small">El ZIP trae el Excel y una carpeta <b>fotos</b>; la columna Foto dice el nombre de cada archivo.</p>
       <p class="small" id="exp-ultima"></p>
+    </div>
+    <div class="card">
+      <h2>Respaldo completo</h2>
+      <p class="small">Tus fotos, costos y tiendas solo están en este teléfono. Descarga un respaldo de vez en cuando (incluye todo) y guárdalo en tu computadora o en la nube.</p>
+      <button class="big" id="btn-zip">Descargar respaldo con fotos (ZIP)</button>
+      <input type="file" id="archivo-resp" accept=".zip" class="hidden">
+      <button class="big" id="btn-restaurar" style="margin-top:8px">Restaurar un respaldo…</button>
     </div>
     <div class="card">
       <h2>Base de datos de tu punto de venta</h2>
@@ -159,16 +168,17 @@ p{margin:6px 0}
       <p class="small">Borra los artículos registrados y sus fotos de este teléfono (el catálogo cargado se queda). Hazlo solo después de exportar.</p>
       <button class="danger big" id="btn-vaciar">Borrar todos los artículos</button>
     </div>
-    <p class="small" style="text-align:center">Los datos se guardan solo en este teléfono. Versión beta 0.2</p>
+    <p class="small" style="text-align:center">Los datos se guardan solo en este teléfono. Versión beta 0.3</p>
   </section>
 </main>
 
 <nav>
   <button data-v="escanear" class="on"><span class="ico">▦</span>Escanear</button>
-  <button data-v="lista"><span class="ico">☰</span>Artículos</button>
+  <button data-v="lista"><span class="ico">⌕</span>Buscar</button>
   <button data-v="exportar"><span class="ico">⇩</span>Exportar</button>
 </nav>
 <div class="toast" id="toast"></div>
+<div id="visor" class="hidden"><img alt="Foto del producto"></div>
 
 <script src="columnas.js"></script>
 <script src="libs/html5-qrcode.min.js"></script>

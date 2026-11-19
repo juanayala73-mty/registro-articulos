@@ -14,6 +14,8 @@
 //  escanear    : true en la columna donde va el código leído con la cámara.
 //  sugerir     : true para sugerir valores ya usados (ej. categorías).
 //  ayuda       : texto pequeño debajo del campo.
+//  exportar    : false = dato personal; se guarda y se busca en la app, pero
+//                NO sale en el Excel del punto de venta (sí en el respaldo).
 // =====================================================================
 
 window.NOMBRE_HOJA = "Productos";
@@ -28,8 +30,9 @@ window.COLUMNAS = [
   { clave: "tipo",      titulo: "Tipo",      tipo: "opciones", opciones: ["Producto", "Servicio"], defecto: "Producto" },
   { clave: "precio",    titulo: "Precio",    tipo: "precio", obligatorio: true },
   { clave: "activo",    titulo: "Activo",    tipo: "opciones", opciones: ["Sí", "No"], defecto: "Sí" },
-  { clave: "costo",     titulo: "Costo tienda", tipo: "precio",
-    ayuda: "Lo que te cuesta el producto en la tienda donde lo compras." },
-  { clave: "tienda",    titulo: "Tienda",    tipo: "texto", sugerir: true },
-  { clave: "foto",      titulo: "Foto",      tipo: "foto" },
+  // --- datos personales (no van al punto de venta) ---
+  { clave: "costo",     titulo: "Costo tienda", tipo: "precio", exportar: false,
+    ayuda: "Lo que te costó en la tienda donde lo compraste." },
+  { clave: "tienda",    titulo: "Tienda",    tipo: "texto", sugerir: true, exportar: false },
+  { clave: "foto",      titulo: "Foto",      tipo: "foto", exportar: false },
 ];

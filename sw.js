@@ -1,5 +1,5 @@
 // Sube este número cada vez que publiques cambios para que los teléfonos tomen la versión nueva.
-const VERSION = "beta-0.2";
+const VERSION = "beta-0.3";
 const ARCHIVOS = ["./", "index.html", "app.js", "columnas.js", "manifest.webmanifest", "icono.svg",
   "icono-192.png", "icono-512.png", "icono-180.png", "libs/html5-qrcode.min.js", "libs/xlsx.full.min.js", "libs/jszip.min.js"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(ARCHIVOS))); self.skipWaiting(); });
