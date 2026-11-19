@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Registro de Artículos</title>
+<meta name="theme-color" content="#1f5f8b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icono-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Artículos">
+<style>
+:root{
+  --bg:#f4f6f8; --card:#fff; --text:#17202a; --muted:#5d6d7e; --line:#d5dbe1;
+  --pri:#1f5f8b; --pri-text:#fff; --ok:#1e8449; --warn:#b9770e; --err:#c0392b;
+  --soft:#e8f1f8;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f141a; --card:#1a222c; --text:#e8edf2; --muted:#9aa8b6; --line:#2c3845;
+    --pri:#4a9fd8; --pri-text:#06121c; --ok:#52be80; --warn:#f0b04a; --err:#ec7063; --soft:#1d2f40; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--pri);color:var(--pri-text);
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:8px}
+header h1{font-size:18px;margin:0;flex:1}
+header .count{font-size:14px;opacity:.9}
+main{max-width:640px;margin:0 auto;padding:12px 16px calc(96px + env(safe-area-inset-bottom))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+button{font:inherit;border:0;border-radius:10px;padding:12px 14px;cursor:pointer;
+  background:var(--soft);color:var(--text)}
+button.pri{background:var(--pri);color:var(--pri-text);font-weight:600}
+button.danger{background:transparent;color:var(--err);border:1px solid var(--err)}
+button:disabled{opacity:.5}
+.big{width:100%;font-size:18px;padding:16px}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+label .req{color:var(--err)}
+input,select{width:100%;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg);color:var(--text)}
+input:focus,select:focus{outline:2px solid var(--pri);outline-offset:0}
+.help{font-size:12px;color:var(--muted);margin-top:3px}
+.err{font-size:13px;color:var(--err);margin-top:3px}
+.inline{display:flex;gap:6px}
+.inline input{flex:1}
+.inline button{flex:0 0 auto;padding:0 14px}
+#lector{width:100%;border-radius:10px;overflow:hidden;background:#000;min-height:220px}
+#lector video{width:100%!important}
+.hint{font-size:13px;color:var(--muted);text-align:center;margin:8px 0 0}
+.search{margin-bottom:10px}
+.item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .info{flex:1;min-width:0}
+.item .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .meta{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .price{font-weight:600;white-space:nowrap}
+.item.inactive .name{text-decoration:line-through;opacity:.7}
+.empty{color:var(--muted);text-align:center;padding:20px 0}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-top:1px solid var(--line);
+  display:flex;padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;background:transparent;font-size:13px;padding:8px 4px;color:var(--muted)}
+nav button.on{color:var(--pri);font-weight:700}
+nav .ico{display:block;font-size:22px;line-height:1}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:9;
+  background:var(--text);color:var(--bg);padding:12px 14px;border-radius:10px;text-align:center;
+  opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--pri)}
+.hidden{display:none!important}
+h2{font-size:17px;margin:0 0 6px}
+p{margin:6px 0}
+.small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Registro de Artículos</h1>
+  <span class="count" id="contador">0</span>
+</header>
+
+<main>
+  <!-- ESCANEAR -->
+  <section id="v-escanear">
+    <div class="card">
+      <div id="lector"></div>
+      <p class="hint" id="lector-msg">Toca “Activar cámara” y apunta al código de barras.</p>
+      <div class="row" style="margin-top:10px">
+        <button class="pri big" id="btn-camara">Activar cámara</button>
+      </div>
+    </div>
+    <div class="card">
+      <label for="manual">¿No lee? Escribe el código</label>
+      <div class="inline">
+        <input id="manual" inputmode="numeric" autocomplete="off" placeholder="Ej. 7501234567890">
+        <button class="pri" id="btn-manual">Buscar</button>
+      </div>
+      <div style="margin-top:10px"><button class="big" id="btn-sin-codigo">Nuevo artículo sin código</button></div>
+    </div>
+  </section>
+
+  <!-- FORMULARIO -->
+  <section id="v-form" class="hidden">
+    <div class="card">
+      <h2 id="form-titulo">Nuevo artículo</h2>
+      <p class="small" id="form-sub"></p>
+      <form id="form" novalidate></form>
+      <div class="row" style="margin-top:16px">
+        <button id="btn-cancelar" type="button">Cancelar</button>
+        <button class="pri" id="btn-guardar" type="button">Guardar</button>
+      </div>
+      <div style="margin-top:10px"><button class="danger big hidden" id="btn-borrar" type="button">Borrar artículo</button></div>
+    </div>
+  </section>
+
+  <!-- LISTA -->
+  <section id="v-lista" class="hidden">
+    <input class="search" id="buscar" type="search" placeholder="Buscar por nombre, código o barras">
+    <div class="card" id="lista"></div>
+  </section>
+
+  <!-- EXPORTAR -->
+  <section id="v-exportar" class="hidden">
+    <div class="card">
+      <h2>Exportar a Excel</h2>
+      <p>Descarga un archivo con la hoja <b id="hoja-nombre"></b> y las columnas de tu plantilla, listo para importarlo en tu punto de venta.</p>
+      <p class="small" id="exp-columnas"></p>
+      <button class="pri big" id="btn-exportar" style="margin-top:8px">Descargar Excel</button>
+      <p class="small" id="exp-ultima"></p>
+    </div>
+    <div class="card">
+      <h2>Cargar un Excel</h2>
+      <p>Carga el catálogo que exportaste de tu punto de venta para que, al escanear, la app encuentre los artículos que ya tienes y puedas editarlos.</p>
+      <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">
+      <button class="big" id="btn-importar">Elegir archivo…</button>
+    </div>
+    <div class="card">
+      <h2>Vaciar la lista</h2>
+      <p class="small">Borra todos los artículos de este teléfono. Hazlo solo después de exportar.</p>
+      <button class="danger big" id="btn-vaciar">Borrar todos los artículos</button>
+    </div>
+    <p class="small" style="text-align:center">Los datos se guardan solo en este teléfono. Versión beta 0.1</p>
+  </section>
+</main>
+
+<nav>
+  <button data-v="escanear" class="on"><span class="ico">▦</span>Escanear</button>
+  <button data-v="lista"><span class="ico">☰</span>Artículos</button>
+  <button data-v="exportar"><span class="ico">⇩</span>Exportar</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script src="columnas.js"></script>
+<script src="libs/html5-qrcode.min.js"></script>
+<script src="libs/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
