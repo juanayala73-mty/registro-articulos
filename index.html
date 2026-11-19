@@ -73,6 +73,19 @@ nav .ico{display:block;font-size:22px;line-height:1}
 h2{font-size:17px;margin:0 0 6px}
 p{margin:6px 0}
 .small{font-size:13px;color:var(--muted)}
+.banner{border-radius:10px;padding:10px 12px;margin:8px 0 4px;font-size:14px}
+.banner b{display:block;font-size:15px}
+.banner.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);border:1px solid var(--ok)}
+.banner.new{background:var(--soft);border:1px solid var(--pri)}
+.banner.warn{background:color-mix(in srgb,var(--warn) 15%,transparent);border:1px solid var(--warn)}
+.foto-box{display:flex;gap:10px;align-items:center}
+.foto-box img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.foto-box .ph{width:96px;height:96px;border-radius:10px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:28px}
+.foto-box .btns{display:flex;flex-direction:column;gap:6px;flex:1}
+.thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:0 0 auto;background:var(--soft)}
+.tag{font-size:11px;padding:1px 6px;border-radius:99px;margin-left:6px;vertical-align:middle;font-weight:600}
+.tag.nuevo{background:var(--soft);color:var(--pri)}
+.tag.act{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
 </style>
 </head>
 <body>
@@ -106,6 +119,7 @@ p{margin:6px 0}
     <div class="card">
       <h2 id="form-titulo">Nuevo artículo</h2>
       <p class="small" id="form-sub"></p>
+      <div id="form-banner"></div>
       <form id="form" novalidate></form>
       <div class="row" style="margin-top:16px">
         <button id="btn-cancelar" type="button">Cancelar</button>
@@ -125,23 +139,27 @@ p{margin:6px 0}
   <section id="v-exportar" class="hidden">
     <div class="card">
       <h2>Exportar a Excel</h2>
-      <p>Descarga un archivo con la hoja <b id="hoja-nombre"></b> y las columnas de tu plantilla, listo para importarlo en tu punto de venta.</p>
+      <p>Descarga los artículos que registraste o actualizaste, en la hoja <b id="hoja-nombre"></b> con las columnas de tu plantilla.</p>
       <p class="small" id="exp-columnas"></p>
       <button class="pri big" id="btn-exportar" style="margin-top:8px">Descargar Excel</button>
+      <button class="big" id="btn-zip" style="margin-top:8px">Descargar Excel + fotos (ZIP)</button>
+      <p class="small">El ZIP trae el Excel y una carpeta <b>fotos</b>; la columna Foto dice el nombre de cada archivo.</p>
       <p class="small" id="exp-ultima"></p>
     </div>
     <div class="card">
-      <h2>Cargar un Excel</h2>
-      <p>Carga el catálogo que exportaste de tu punto de venta para que, al escanear, la app encuentre los artículos que ya tienes y puedas editarlos.</p>
+      <h2>Base de datos de tu punto de venta</h2>
+      <p>Carga el catálogo que exportas de tu punto de venta (Excel o CSV). Al escanear, la app te dirá si el producto ya existe en tu sistema y te mostrará sus datos.</p>
+      <p class="small" id="cat-estado"></p>
       <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">
-      <button class="big" id="btn-importar">Elegir archivo…</button>
+      <button class="big" id="btn-importar">Cargar catálogo…</button>
+      <button class="danger big hidden" id="btn-cat-borrar" style="margin-top:8px">Quitar catálogo cargado</button>
     </div>
     <div class="card">
       <h2>Vaciar la lista</h2>
-      <p class="small">Borra todos los artículos de este teléfono. Hazlo solo después de exportar.</p>
+      <p class="small">Borra los artículos registrados y sus fotos de este teléfono (el catálogo cargado se queda). Hazlo solo después de exportar.</p>
       <button class="danger big" id="btn-vaciar">Borrar todos los artículos</button>
     </div>
-    <p class="small" style="text-align:center">Los datos se guardan solo en este teléfono. Versión beta 0.1</p>
+    <p class="small" style="text-align:center">Los datos se guardan solo en este teléfono. Versión beta 0.2</p>
   </section>
 </main>
 
@@ -155,6 +173,7 @@ p{margin:6px 0}
 <script src="columnas.js"></script>
 <script src="libs/html5-qrcode.min.js"></script>
 <script src="libs/xlsx.full.min.js"></script>
+<script src="libs/jszip.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

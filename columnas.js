@@ -6,7 +6,8 @@
 //  clave       : nombre interno (sin espacios ni acentos). No lo cambies
 //                si ya tienes artículos guardados, o se perderá ese dato.
 //  titulo      : encabezado exacto que aparece en el Excel.
-//  tipo        : "texto" | "numero" | "precio" | "opciones"
+//  tipo        : "texto" | "numero" | "precio" | "opciones" | "foto"
+//                (foto: en el Excel va el nombre del archivo; las fotos salen en el ZIP)
 //  obligatorio : true si no se puede guardar vacío.
 //  defecto     : valor que se pone solo al crear un artículo nuevo.
 //  opciones    : lista de valores permitidos (solo para tipo "opciones").
@@ -27,4 +28,8 @@ window.COLUMNAS = [
   { clave: "tipo",      titulo: "Tipo",      tipo: "opciones", opciones: ["Producto", "Servicio"], defecto: "Producto" },
   { clave: "precio",    titulo: "Precio",    tipo: "precio", obligatorio: true },
   { clave: "activo",    titulo: "Activo",    tipo: "opciones", opciones: ["Sí", "No"], defecto: "Sí" },
+  { clave: "costo",     titulo: "Costo tienda", tipo: "precio",
+    ayuda: "Lo que te cuesta el producto en la tienda donde lo compras." },
+  { clave: "tienda",    titulo: "Tienda",    tipo: "texto", sugerir: true },
+  { clave: "foto",      titulo: "Foto",      tipo: "foto" },
 ];
